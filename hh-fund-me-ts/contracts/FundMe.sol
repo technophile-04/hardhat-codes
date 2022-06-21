@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import "./PriceConverter.sol";
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
-error NotOwner();
+error FundMe__NotOwner();
 
 contract FundMe {
     using PriceConverter for uint256;
@@ -17,9 +17,28 @@ contract FundMe {
     mapping(address => uint256) public addressToAmountFunded;
     AggregatorV3Interface public priceFeed;
 
+    modifier onlyOwner() {
+        // The string is stored in string array
+        // require(msg.sender == i_owner, "Not owner of the contract");
+
+        // Hence we dont store array of string
+        if (msg.sender != i_owner) {
+            revert FundMe__NotOwner();
+        }
+        _;
+    }
+
     constructor(address _priceFeed) {
         i_owner = msg.sender;
         priceFeed = AggregatorV3Interface(_priceFeed);
+    }
+
+    receive() external payable {
+        fund();
+    }
+
+    fallback() external payable {
+        fund();
     }
 
     function fund() public payable {
@@ -45,21 +64,26 @@ contract FundMe {
         // msg.sender = address
         // paybale(msg.sender) = paybale address;
 
-        (bool callSuccess, ) = payable(address(this)).call{
+        (bool callSuccess, ) = payable(i_owner).call{
             value: address(this).balance
         }("");
         require(callSuccess, "Call falied ");
     }
 
-    modifier onlyOwner() {
-        // The string is stored in string array
-        // require(msg.sender == i_owner, "Not owner of the contract");
+    function cheaperWithdraw() public payable {
+        address[] memory m_funders = funders;
 
-        // Hence we dont store array of string
-        if (msg.sender == i_owner) {
-            revert NotOwner();
+        for (uint256 i = 0; i < m_funders.length; i++) {
+            address currAddress = m_funders[i];
+            addressToAmountFunded[currAddress] = 0;
         }
-        _;
+
+        funders = new address[](0);
+
+        (bool callSuccess, ) = payable(i_owner).call{
+            value: address(this).balance
+        }("");
+        require(callSuccess, "Call falied ");
     }
 
     /* 
@@ -82,12 +106,4 @@ receive() exists?  fallback()
         /      \
     receive()   fallback() 
     */
-
-    receive() external payable {
-        fund();
-    }
-
-    fallback() external payable {
-        fund();
-    }
 }
