@@ -23,4 +23,16 @@ describe("SimpleStorage", async () => {
 
         assert.equal(updatedValue.toString(), "10");
     });
+
+    it("Should add persons and his favnumber", async () => {
+        let txnResponse = await simpleStorage.addPerson("Shiv", "100");
+        await txnResponse.wait();
+
+        txnResponse = await simpleStorage.addPerson("Jhon", "200");
+        await txnResponse.wait();
+
+        const totalPeople = await simpleStorage.totalPeople();
+
+        assert.equal(totalPeople.toString(), "2");
+    });
 });

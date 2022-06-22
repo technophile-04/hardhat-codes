@@ -31,11 +31,14 @@ describe("SimpleStorage", async () => {
   });
 
   it("Should add persons and his favnumber", async () => {
-    const txnRecp = await simpleStorage.addPerson("Shiv", "100");
-    await txnRecp.wait();
+    let txnResponse = await simpleStorage.addPerson("Shiv", "100");
+    await txnResponse.wait();
+
+    txnResponse = await simpleStorage.addPerson("Jhon", "200");
+    await txnResponse.wait();
 
     const totalPeople = await simpleStorage.totalPeople();
 
-    assert.equal(totalPeople.toString(), "1");
+    assert.equal(totalPeople.toString(), "2");
   });
 });
